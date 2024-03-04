@@ -38,7 +38,7 @@ class AI_:
 
         text_salt = " ".join([text.page_content for text in texts])
 
-        oembed = OllamaEmbeddings(base_url="http://localhost:11434", model="nomic-embed-text-upsonic")
+        oembed = OllamaEmbeddings(base_url="http://localhost:11434", model="gemma-2b-upsonic")
 
 
         if not os.path.exists("/var/lib/redis/embed_by_documents"):
