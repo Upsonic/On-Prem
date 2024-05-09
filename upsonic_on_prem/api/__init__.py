@@ -42,6 +42,39 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 limiter = Limiter(get_remote_address, app=app, default_limits=rate_limit)
 
 
+
+
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
+    ConsoleSpanExporter,
+)
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+    OTLPSpanExporter,
+)
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+# Creates a tracer from the global tracer provider
+tracer = trace.get_tracer("my.tracer.name")
+resource = Resource.create({"service.name": "python.console.traces"})
+provider = TracerProvider(resource=resource)
+trace.set_tracer_provider(provider)
+
+# Adds span processor with the OTLP exporter to the tracer provider
+provider.add_span_processor(
+    SimpleSpanProcessor(OTLPSpanExporter(endpoint="https://collector-us1.infrastack.ai/v1/traces", headers=(("infrastack-api-key", "sk-"),)))
+)
+
+
+tracer = trace.get_tracer(__name__)
+
+FlaskInstrumentor().instrument_app(app, tracer_provider=provider)
+
+
+
 @app.route(status_url, methods=["GET"])
 def status():
     return jsonify({"status": True, "result": True})
